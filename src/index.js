@@ -20,6 +20,71 @@ function rollDice(){
     return roll;
 }
 
+function findMinIndex(array){
+    var minValue = array[array.length-1];
+    var minIndex = array.indexOf(minValue);
+    return minIndex;
+}
+
+function countRollListElements() {
+    var rList = this.attributes["rollList"];
+    rList = rList.sort(function(a, b){return b - a}); // sort list is descending order
+
+    var frequencyTable = {};
+    while(rList.length > 0){
+        var minIndex = findMinIndex(rList);
+        var minValueList = array.slice(minIndex); // returns array of smallest value in rList
+        var minVal = minValueList[0];
+        frequencyTable[minVal] = minValueList.length;
+        rList.splice(minIndex, minValueList.length); // remove smallest value in rList
+    }
+    return frequencyTable;
+}
+
+// find the most rolled count
+function findMostRolledCount(rollFrequencies) {
+    var mostRolledCount = 0;
+    for(v in rollFrequencies){
+        if(rollFrequencies[v] > mostRolledCount){
+            mostRolledCount = rollFrequencies[v];
+        }
+    }
+    return mostRolledCount;
+}
+
+// find the values equal to the most rolled count
+function findMostRolledList(rollFrequencies, mostRolledCount) {
+    var mostRolledList = [];
+    for(v in rollFrequencies){
+        if(rollFrequencies[v] === mostRolledCount){
+            mostRolledList.push(v);
+        }
+    }
+    return mostRolledList;
+}
+
+// find the least rolled count
+function findLeastRolledCount(rollFrequencies) {
+    var leastRolledCount = Infinity;
+    for(v in rollFrequencies){
+        if(rollFrequencies[v] < leastRolledCount){
+            leastRolledCount = rollFrequencies[v];
+        }
+    }
+    return leastRolledCount;
+}
+
+// find the values equal to the least rolled count
+function findLeastRolledList(rollFrequencies, leastRolledCount) {
+    var leastRolledList = [];
+    for(v in rollFrequencies){
+        if(rollFrequencies[v] === leastRolledCount){
+            leastRolledList.push(v);
+        }
+    }
+    return leastRolledList;
+}
+
 // handlers before the game starts
 var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
     "StartIntent": function () {
@@ -94,25 +159,122 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     "StatisticsHelpIntent": function() {
     },
 
+    // emits the value(s) and the most rolled frequency in the game
     "MostRollIntent": function() {
-        var rList = this.attributes["rollList"];
-        if (rList.length == 0){
+        if (this.attributes["rollList"].length == 0){
             this.emit(":tell", "You need to roll first!");
         }
-        rList = rList.sort(function(a, b){return b - a}); // sort list is descending order
+        var rollFrequencies = countRollListElements();
+        var mostRolledCount = findMostRolledCount(rollFrequencies);
+        var mostRolledList = findMostRolledList(rollFrequencies, mostRolledCount);
 
+        var outputSpeech = "";
+        if(mostRolledList.length > 1){
+            var numString = ""
+            for(var i = 0; i < mostRolledList.length; i++){
+                numString = numString.concat(mostRolledList[i], " ");
+            }
+            outputSpeech = "The most rolled numbers are " + numString + " with a frequency of " + mostRolledCount;
+            console.log(outputSpeech);
+        } else {
+            outputSpeech = "The most rolled number is " + mostRolledList[0] + " with a frequency of " + mostRolledCount;
+        }
+
+        this.response.speak(outputSpeech);
+        this.emit(':responseReady');
     },
 
+    // emits the value(s) and the least rolled frequency in the game
     "LeastRollIntent": function() {
-        if (rList.length == 0){
+        if (this.attributes["rollList"].length == 0){
             this.emit(":tell", "You need to roll first!");
         }
+        var rollFrequencies = countRollListElements();
+        var leastRolledCount = findLeastRolledCount(rollFrequencies);
+        var leastRolledList = findLeastRolledList(rollFrequencies, leastRolledCount);
+
+        var outputSpeech = "";
+        if(leastRolledList.length > 1){
+            var numString = ""
+            for(var i = 0; i < leastRolledList.length; i++){
+                numString = numString.concat(leastRolledList[i], " ");
+            }
+            outputSpeech = "The least rolled numbers are " + numString + " with a frequency of " + leastRolledCount;
+            console.log(outputSpeech);
+        } else {
+            outputSpeech = "The least rolled number is " + leastRolledList[0] + " with a frequency of " + leastRolledCount;
+        }
+
+        this.response.speak(outputSpeech);
+        this.emit(':responseReady');
     },
 
+    // emits the top three values of with frequencies (can be the same frequencies or different)
     "TopThreeRollsIntent": function() {
-        if (rList.length < 3){
+        if (this.attributes["rollList"].length < 3){
             this.emit(":tell", "You need to roll more first!");
         }
+
+        var rollFrequencies = countRollListElements();
+        var mostRolledCount1 = findMostRolledCount(rollFrequencies);
+        var mostRolledList1 = findMostRolledList(rollFrequencies, mostRolledCount1);
+        var outputSpeech = "";
+
+    // we only would get here if all there are 3 different numbers with the same frequency
+        if(mostRolledList1.length === 3){
+            var numString = ""
+            for(var i = 0; i < mostRolledList1.length; i++){
+                numString = numString.concat(mostRolledList1[i], " ");
+            }
+            outputSpeech = "The top three rolled numbers are " + numString + " with a frequency of " + mostRolledCount1;
+            this.response.speak(outputSpeech);
+            this.emit(":responseReady");
+        }
+
+    // we only would get here if there are 2 different numbers with the same frequency or 1 number in the first list
+        for(v1 in rollFrequencies){
+            if(rollFrequencies[v1] === mostRolledCount1){
+                delete rollFrequencies[v1];
+            }
+        }
+
+        var mostRolledCount2 = findMostRolledCount(rollFrequencies);
+        var mostRolledList2 = findMostRolledList(rollFrequencies, mostRolledCount2);
+
+        if((mostRolledList1.length + mostRolledList2.length) >= 3){
+            var numString1 = "";
+            for(var i = 0; i < mostRolledList1.length; i++){
+                numString = numString.concat(mostRolledList1[i], " ");
+            }
+
+            var numString2 = "";
+            for(var j = 0; j < mostRolledList2.length; j++){
+                numString2 = numString2.concat(mostRolledList2[j], " ");
+            }
+
+            outputSpeech = "The top three rolled numbers are " + numString + "with a frequency of " + mostRolledCount1
+                            + " and "+ numString2 + " with a frequency of " + mostRolledCount2;
+
+            this.response.speak(outputSpeech);
+            this.emit(":responseReady");
+        }
+
+    // we only would get here if each most roll list had one item in their lists
+        for(v2 in rollFrequencies){
+            if(rollFrequencies[v2] === mostRolledCount2){
+                delete rollFrequencies[v2];
+            }
+        }
+
+        var mostRolledCount3 = findMostRolledCount(rollFrequencies);
+        var mostRolledList3 = findMostRolledList(rollFrequencies, mostRolledCount3);
+
+        outputSpeech = "The top three rolled numbers are " + mostRolledList1[0] + "  with a frequency of " + mostRolledCount1
+                            + ", "+ mostRolledList2[0] + " with a frequency of " + mostRolledCount2 + " and "
+                            + mostRolledList3[0] + " with a frequency of " + mostRolledCount3;
+
+        this.response.speak(outputSpeech);
+        this.emit(":responseReady");
     },
 
     "NumberOfTurnsIntent": function() {
