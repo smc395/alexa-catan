@@ -1,14 +1,17 @@
-"use strict"
+"use strict";
+
 const Alexa = require("alexa-sdk");
 
 exports.handler = function(event, context, callback){
     const alexa = Alexa.handler(event, context, callback);
+    alexa.appId = "amzn1.ask.skill.6fcf0010-f714-4fc0-a510-ebbf3d5e3910";
     //alexa.dynamoDBTableName = "TableName";
-    alexa.registerHandlers(gameHandlers, inGameHandlers);
+    alexa.registerHandlers(generalHandlers, gameHandlers, initialHandlers, inGameHandlers, endGameHandlers);
     alexa.execute();
-}
+};
 
 const states = {
+    LAUNCH: "_LAUNCHGAME",
     INITIAL: "_INITIAL",
     INGAME: "_INGAME",
     ENDGAME: "_ENDGAME"
@@ -28,14 +31,14 @@ function findMinIndex(array){
 }
 
 // creates a map of roll values to their frequency
-function countRollListElements() {
-    var rList = this.attributes["rollList"];
-    rList = rList.sort(function(a, b){return b - a}); // sort list is descending order
+function countRollListElements(list) {
+    var rList = list;
+    rList = rList.sort(function(a, b){return b - a}); // sort list in descending order
 
     var frequencyTable = {};
     while(rList.length > 0){
         var minIndex = findMinIndex(rList);
-        var minValueList = array.slice(minIndex); // returns array of smallest value in rList
+        var minValueList = rList.slice(minIndex); // returns array of smallest value in rList
         var minVal = minValueList[0];
         frequencyTable[minVal] = minValueList.length;
         rList.splice(minIndex, minValueList.length); // remove smallest value in rList
@@ -46,7 +49,7 @@ function countRollListElements() {
 // find the most rolled count
 function findMostRolledCount(rollFrequencies) {
     var mostRolledCount = 0;
-    for(v in rollFrequencies){
+    for(var v in rollFrequencies){
         if(rollFrequencies[v] > mostRolledCount){
             mostRolledCount = rollFrequencies[v];
         }
@@ -57,7 +60,7 @@ function findMostRolledCount(rollFrequencies) {
 // find the values equal to the most rolled count
 function findMostRolledList(rollFrequencies, mostRolledCount) {
     var mostRolledList = [];
-    for(v in rollFrequencies){
+    for(var v in rollFrequencies){
         if(rollFrequencies[v] === mostRolledCount){
             mostRolledList.push(v);
         }
@@ -68,7 +71,7 @@ function findMostRolledList(rollFrequencies, mostRolledCount) {
 // find the least rolled count
 function findLeastRolledCount(rollFrequencies) {
     var leastRolledCount = Infinity;
-    for(v in rollFrequencies){
+    for(var v in rollFrequencies){
         if(rollFrequencies[v] < leastRolledCount){
             leastRolledCount = rollFrequencies[v];
         }
@@ -79,7 +82,7 @@ function findLeastRolledCount(rollFrequencies) {
 // find the values equal to the least rolled count
 function findLeastRolledList(rollFrequencies, leastRolledCount) {
     var leastRolledList = [];
-    for(v in rollFrequencies){
+    for(var v in rollFrequencies){
         if(rollFrequencies[v] === leastRolledCount){
             leastRolledList.push(v);
         }
@@ -93,6 +96,11 @@ var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
         this.emit(":ask", "Ready to start a new game?", "Say yes to start or no to quit");
     },
 
+    "AMAZON.HelpIntent": function() {
+        this.emit(":tell", "To play, simply say 'roll' and I'll roll the dice, Say 'add' with a number to manually add a roll, " +
+            "Say 'undo' to undo the last roll, Say 'statistics help' to hear some statistics I can give you about the game");
+    },
+
     "AMAZON.YesIntent": function() {
         this.attributes["rollList"] = []; // reset roll list
         this.attributes["elapsedTurns"] = 1;
@@ -101,7 +109,7 @@ var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
     },
 
     "AMAZON.NoIntent": function(){
-        this.handler.state = "";
+        this.handler.state = states.LAUNCH;
         this.response.speak("Ok see you next time");
         this.emit(":responseReady");
     }
@@ -142,8 +150,10 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     // removes roll from the end of the list
     "UndoRollIntent": function() {
         this.attributes["rollList"].pop();
-        var turns = this.attributes["elapsedTurns"];
-        this.attributes["elapsedTurns"] = turns - 1;
+        if(this.attributes["rollList"].length > 0){
+            var turns = this.attributes["elapsedTurns"];
+            this.attributes["elapsedTurns"] = turns - 1;
+        }
         this.emit(":tell", "I have undone the roll");
     },
 
@@ -159,17 +169,18 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     },
 
     "StatisticsHelpIntent": function() {
-        this.emit(":tell", "Say 'most rolled' and I'll tell you the most rolled number, Say 'turns' and I'll tell you how many \
-            player turns it has been since you've started the game, Say 'least rolled' and I'll tell you the least rolled \
-            number in the game, finally Say 'top three' to hear the top three rolls" );
+        this.emit(":tell", "Say 'most rolled' and I'll tell you the most rolled number, Say 'turns' and I'll tell you how many " +
+            "player turns it has been since you've started the game, Say 'least rolled' and I'll tell you the least rolled " +
+            "number in the game, finally Say 'top three' to hear the top three rolls" );
     },
 
     // emits the value(s) and the most rolled frequency in the game
     "MostRollIntent": function() {
-        if (this.attributes["rollList"].length == 0){
+        if (this.attributes["rollList"].length === 0){
             this.emit(":tell", "You need to roll first!");
         }
-        var rollFrequencies = countRollListElements();
+        var list = JSON.parse(JSON.stringify(this.attributes["rollList"])); // to prevent session attributes from being altered
+        var rollFrequencies = countRollListElements(list);
         var mostRolledCount = findMostRolledCount(rollFrequencies);
         var mostRolledList = findMostRolledList(rollFrequencies, mostRolledCount);
 
@@ -177,10 +188,9 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         if(mostRolledList.length > 1){
             var numString = ""
             for(var i = 0; i < mostRolledList.length; i++){
-                numString = numString.concat(mostRolledList[i], " ");
+                numString = numString.concat(mostRolledList[i], ", ");
             }
-            outputSpeech = "The most rolled numbers are " + numString + " with a frequency of " + mostRolledCount;
-            console.log(outputSpeech);
+            outputSpeech = "The most rolled numbers are " + numString + "with a frequency of " + mostRolledCount;
         } else {
             outputSpeech = "The most rolled number is " + mostRolledList[0] + " with a frequency of " + mostRolledCount;
         }
@@ -191,10 +201,11 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
 
     // emits the value(s) and the least rolled frequency in the game
     "LeastRollIntent": function() {
-        if (this.attributes["rollList"].length == 0){
+        if (this.attributes["rollList"].length === 0){
             this.emit(":tell", "You need to roll first!");
         }
-        var rollFrequencies = countRollListElements();
+        var list = JSON.parse(JSON.stringify(this.attributes["rollList"])); // to prevent session attributes from being altered
+        var rollFrequencies = countRollListElements(list);
         var leastRolledCount = findLeastRolledCount(rollFrequencies);
         var leastRolledList = findLeastRolledList(rollFrequencies, leastRolledCount);
 
@@ -202,10 +213,9 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         if(leastRolledList.length > 1){
             var numString = ""
             for(var i = 0; i < leastRolledList.length; i++){
-                numString = numString.concat(leastRolledList[i], " ");
+                numString = numString.concat(leastRolledList[i], ", ");
             }
-            outputSpeech = "The least rolled numbers are " + numString + " with a frequency of " + leastRolledCount;
-            console.log(outputSpeech);
+            outputSpeech = "The least rolled numbers are " + numString + "with a frequency of " + leastRolledCount;
         } else {
             outputSpeech = "The least rolled number is " + leastRolledList[0] + " with a frequency of " + leastRolledCount;
         }
@@ -219,8 +229,8 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         if (this.attributes["rollList"].length < 3){
             this.emit(":tell", "You need to roll more first!");
         }
-
-        var rollFrequencies = countRollListElements();
+        var list = JSON.parse(JSON.stringify(this.attributes["rollList"])); // to prevent session attributes from being altered
+        var rollFrequencies = countRollListElements(list);
         var mostRolledCount1 = findMostRolledCount(rollFrequencies);
         var mostRolledList1 = findMostRolledList(rollFrequencies, mostRolledCount1);
         var outputSpeech = "";
@@ -229,17 +239,16 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         if(mostRolledList1.length === 3){
             var numString = ""
             for(var i = 0; i < mostRolledList1.length; i++){
-                numString = numString.concat(mostRolledList1[i], " ");
+                numString = numString.concat(mostRolledList1[i], ", ");
             }
             outputSpeech = "The top three rolled numbers are " + numString + "with a frequency of " + mostRolledCount1;
-            console.log(outputSpeech);
             this.response.speak(outputSpeech);
             this.emit(":responseReady");
         }
 
     // we only would get here if there are 2 different numbers with the same frequency or 1 number in the first list
         // remove roll value with the highest frequency
-        for(v1 in rollFrequencies){
+        for(var v1 in rollFrequencies){
             if(rollFrequencies[v1] === mostRolledCount1){
                 delete rollFrequencies[v1];
             }
@@ -250,13 +259,13 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
 
         if((mostRolledList1.length + mostRolledList2.length) >= 3){
             var numString1 = "";
-            for(var i = 0; i < mostRolledList1.length; i++){
-                numString1 = numString1.concat(mostRolledList1[i], " ");
+            for(var j = 0; j < mostRolledList1.length; j++){
+                numString1 = numString1.concat(mostRolledList1[j], ", ");
             }
 
             var numString2 = "";
-            for(var j = 0; j < mostRolledList2.length; j++){
-                numString2 = numString2.concat(mostRolledList2[j], " ");
+            for(var k = 0; k < mostRolledList2.length; k++){
+                numString2 = numString2.concat(mostRolledList2[k], ", ");
             }
 
             outputSpeech = "The top three rolled numbers are " + numString1 + "with a frequency of " + mostRolledCount1
@@ -267,7 +276,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         }
 
     // we only would get here if each most roll list had one item in their lists
-        for(v2 in rollFrequencies){
+        for(var v2 in rollFrequencies){
             if(rollFrequencies[v2] === mostRolledCount2){
                 delete rollFrequencies[v2];
             }
@@ -279,13 +288,17 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         outputSpeech = "The top three rolled numbers are " + mostRolledList1[0] + "  with a frequency of " + mostRolledCount1
                             + ", " + mostRolledList2[0] + " with a frequency of " + mostRolledCount2 + " and "
                             + mostRolledList3[0] + " with a frequency of " + mostRolledCount3;
-        console.log(outputSpeech);
         this.response.speak(outputSpeech);
         this.emit(":responseReady");
     },
 
     "NumberOfTurnsIntent": function() {
         this.emit(":tell", this.attributes["elapsedTurns"] + " turns have passed since the start of the game");
+    },
+
+    "AMAZON.HelpIntent": function() {
+        this.emit(":tell", "To play, simply say 'roll' and I'll roll the dice, Say 'add' with a number to manually add a roll, " +
+            "Say 'undo' to undo the last roll, Say 'statistics help' to hear some statistics I can give you about the game");
     },
 
     "EndGamePromptIntent": function() {
@@ -300,7 +313,7 @@ var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
     },
 
     "AMAZON.YesIntent": function() {
-        this.handler.state = "";
+        this.handler.state = states.LAUNCH;
         this.response.speak("Good game! Hope to see you next time!");
         this.emit(":responseReady");
     },
@@ -310,14 +323,30 @@ var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
         this.response.speak("Ok back to the game!");
         this.emit(":responseReady");
     }
-}
+});
 
 // general handlers not bound to a state
-var gameHandlers = {
+var generalHandlers = {
     "LaunchRequest": function() {
-        this.emit(":tell", "Welcome to Settlers of Catan! Let me know when you are ready to start a new game");
+        this.handler.state = states.LAUNCH;
+        this.emit(":tell", "Welcome to Settlers of Catan! Say new game to start a new game");
     },
 
+    "RollIntent": function(roll) {
+        if (roll === undefined) {
+            roll = rollDice();
+        }
+        this.emit(":tell", roll);
+    },
+
+    "AMAZON.HelpIntent": function() {
+        this.emit(":tell", "To play, simply say 'roll' and I'll roll the dice, Say 'add' with a number to manually add a roll, " +
+            "Say 'undo' to undo the last roll, Say 'statistics help' to hear some statistics I can give you about the game");
+    }
+}
+
+// handlers for before game starts and after skill launch
+var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
     "NewGameIntent": function() {
         this.handler.state = states.INITIAL;
         this.emitWithState("StartIntent")
@@ -330,13 +359,8 @@ var gameHandlers = {
         this.emit(":tell", roll);
     },
 
-    "AMAZON.HelpIntent": function() {
-        this.emit(":tell", "To play, simply say 'roll' and I'll roll the dice, Say 'add' with a number to manually add a roll, \
-            Say 'undo' to undo the last roll, Say 'statistics' to hear some statistics I can give you about the game");
-    },
-
     "AMAZON.StopIntent": function() {
         this.response.speak("Goodbye!");
         this.emit(':responseReady');
     }
-}
+});
