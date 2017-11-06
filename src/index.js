@@ -28,14 +28,14 @@ function rollDice() {
     return roll;
 }
 
-function incrementTurn() {
-    var turns = this.attributes["elapsedTurns"];
-    this.attributes["elapsedTurns"] = turns + 1;
+function incrementTurn(numOfTurns) {
+    var turns = numOfTurns + 1;
+    return turns;
 }
 
-function decrementTurn() {
-    var turns = this.attributes["elapsedTurns"];
-    this.attributes["elapsedTurns"] = turns - 1;
+function decrementTurn(numOfTurns) {
+    var turns = numOfTurns - 1;
+    return turns;
 }
 
 function findMinIndex(array) {
@@ -218,7 +218,8 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     "RollIntent": function() {
         var roll = rollDice();
         this.attributes["rollList"].push(roll);
-        incrementTurn();
+        var turns = incrementTurn(this.attributes["elapsedTurns"]);
+        this.attributes["elapsedTurns"] = turns;
         this.emit("RollIntent", roll);
     },
 
@@ -230,7 +231,8 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
             this.emit(":elicitSlot", "number", "I could not add that to my list, " + repromptSpeech, repromptSpeech);
         } else {
             this.attributes["rollList"].push(roll);
-            incrementTurn();
+            var turns = incrementTurn(this.attributes["elapsedTurns"]);
+            this.attributes["elapsedTurns"] = turns;
             this.emit(":tell", "I have added the roll " + roll);
         }
     },
@@ -239,7 +241,8 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     "UndoRollIntent": function() {
         this.attributes["rollList"].pop();
         if(this.attributes["rollList"].length > 0){
-            decrementTurn();
+            var turns = decrementTurn(this.attributes["elapsedTurns"]);
+            this.attributes["elapsedTurns"] = turns;
         }
         this.emit(":tell", "I have undone the roll");
     },
