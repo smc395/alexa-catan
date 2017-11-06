@@ -4,11 +4,11 @@ const Alexa = require("alexa-sdk");
 
 exports.handler = function(event, context, callback){
     const alexa = Alexa.handler(event, context, callback);
-    alexa.appId = "amzn1.ask.skill.6fcf0010-f714-4fc0-a510-ebbf3d5e3910";
-    //alexa.dynamoDBTableName = "TableName";
     alexa.registerHandlers(generalHandlers, gameHandlers, initialHandlers, inGameHandlers, endGameHandlers);
     alexa.execute();
 };
+
+// ***************** GAME STATES *****************
 
 const states = {
     LAUNCH: "_LAUNCHGAME",
@@ -17,14 +17,28 @@ const states = {
     ENDGAME: "_ENDGAME"
 };
 
-function rollDice(){
-    const min = 2;
-    const max = 12;
-    var roll = Math.floor(Math.random() * (max - min + 1)) + min;
+// ***************** HELPER FUNCTIONS *****************
+
+function rollDice() {
+    const min = 1;
+    const max = 6;
+    var dice1 = Math.floor(Math.random() * (max - min + 1)) + min;
+    var dice2 = Math.floor(Math.random() * (max - min + 1)) + min;
+    var roll = dice1 + dice2;
     return roll;
 }
 
-function findMinIndex(array){
+function incrementTurn() {
+    var turns = this.attributes["elapsedTurns"];
+    this.attributes["elapsedTurns"] = turns + 1;
+}
+
+function decrementTurn() {
+    var turns = this.attributes["elapsedTurns"];
+    this.attributes["elapsedTurns"] = turns - 1;
+}
+
+function findMinIndex(array) {
     var minValue = array[array.length-1];
     var minIndex = array.indexOf(minValue);
     return minIndex;
@@ -33,12 +47,12 @@ function findMinIndex(array){
 // creates a map of roll values to their frequency
 function countRollListElements(list) {
     var rList = list;
-    rList = rList.sort(function(a, b){return b - a}); // sort list in descending order
+    rList = rList.sort(function(a, b){return b - a;}); // sort list in descending order
 
     var frequencyTable = {};
     while(rList.length > 0){
         var minIndex = findMinIndex(rList);
-        var minValueList = rList.slice(minIndex); // returns array of smallest value in rList
+        var minValueList = rList.slice(minIndex); // array of smallest value in rList
         var minVal = minValueList[0];
         frequencyTable[minVal] = minValueList.length;
         rList.splice(minIndex, minValueList.length); // remove smallest value in rList
@@ -46,7 +60,6 @@ function countRollListElements(list) {
     return frequencyTable;
 }
 
-// find the most rolled count
 function findMostRolledCount(rollFrequencies) {
     var mostRolledCount = 0;
     for(var v in rollFrequencies){
@@ -68,7 +81,6 @@ function findMostRolledList(rollFrequencies, mostRolledCount) {
     return mostRolledList;
 }
 
-// find the least rolled count
 function findLeastRolledCount(rollFrequencies) {
     var leastRolledCount = Infinity;
     for(var v in rollFrequencies){
@@ -90,6 +102,63 @@ function findLeastRolledList(rollFrequencies, leastRolledCount) {
     return leastRolledList;
 }
 
+// ***************** GAME STATE HANDLERS *****************
+
+// general handlers not bound to a state
+var generalHandlers = {
+    "LaunchRequest": function() {
+        this.handler.state = states.LAUNCH;
+        this.emit(":tell", "Welcome to Settlers of Catan! If this is your first time using this skill, please say 'help' to learn how to use it");
+    },
+
+    // so in game RollIntent can access this intent
+    "RollIntent": function(roll) {
+        if (roll === undefined) {
+            roll = rollDice();
+        }
+        this.emit(":tell", roll);
+    }
+};
+
+// general skill handlers after game launch
+var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
+    "NewGameIntent": function() {
+        this.handler.state = states.INITIAL;
+        this.emitWithState("StartIntent")
+    },
+
+    "RollIntent": function(roll) {
+        if (roll === undefined) {
+            roll = rollDice();
+        }
+        this.emit(":tell", roll);
+    },
+
+    "AMAZON.HelpIntent": function() {
+        this.emit(":tell", "During the initial part of the game when you place your first two houses and roads, you can ask me to roll the dice for you."
+            + "Then when you are ready to begin the game, say new game. During the game you can use me to roll the dice for you."
+            + "If not, during the game you can say 'add' with a number to manually add a roll or say 'undo' to undo the last roll."
+            + "I also track statistics during the game such as the number of elapsed turns, the last rolled number, most rolled number, least rolled number, and three most rolled numbers."
+            + "Say 'statistics help' at any time during the game to hear the statistics I can give you. When you are ready to end the game let me know.");
+    },
+
+    "AMAZON.CancelIntent": function() {
+        this.response.speak("Goodbye!");
+        this.emit(':responseReady');
+    },
+
+    "AMAZON.StopIntent": function() {
+        this.response.speak("Goodbye!");
+        this.emit(':responseReady');
+    },
+
+    "Unhandled": function() {
+        const message = "Sorry I didn't get that. Please say it again.";
+        this.response.speak(message).listen(message);
+        this.emit(':responseReady');
+    }
+});
+
 // handlers before the game starts
 var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
     "StartIntent": function() {
@@ -97,8 +166,11 @@ var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
     },
 
     "AMAZON.HelpIntent": function() {
-        this.emit(":tell", "To play, simply say 'roll' and I'll roll the dice, Say 'add' with a number to manually add a roll, " +
-            "Say 'undo' to undo the last roll, Say 'statistics help' to hear some statistics I can give you about the game");
+        this.emit(":tell", "During the initial part of the game when you place your first two houses and roads, you can ask me to roll the dice for you."
+            + "Then when you are ready to begin the game, say new game. During the game you can use me to roll the dice for you."
+            + "If not, during the game you can say 'add' with a number to manually add a roll or say 'undo' to undo the last roll."
+            + "I also track statistics during the game such as the number of elapsed turns, the last rolled number, most rolled number, least rolled number, and three most rolled numbers."
+            + "Say 'statistics help' at any time during the game to hear the statistics I can give you. When you are ready to end the game let me know.");
     },
 
     "AMAZON.YesIntent": function() {
@@ -110,12 +182,30 @@ var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
 
     "AMAZON.NoIntent": function(){
         this.handler.state = states.LAUNCH;
-        this.response.speak("Ok see you next time");
+        this.response.speak("Okay, see you next time");
         this.emit(":responseReady");
+    },
+
+    "AMAZON.CancelIntent": function() {
+        this.handler.state = states.LAUNCH;
+        this.response.speak("Okay, see you next time!");
+        this.emit(':responseReady');
+    },
+
+    "AMAZON.StopIntent": function() {
+        this.handler.state = states.LAUNCH;
+        this.response.speak("Okay, see you next time!");
+        this.emit(':responseReady');
+    },
+
+    "Unhandled": function() {
+        const message = "Sorry I didn't get that. Please say it again.";
+        this.response.speak(message).listen(message);
+        this.emit(':responseReady');
     }
  });
 
-// handlers when the game has started till the end of the game
+// handlers when the game has started
 var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
 
     "FirstRollIntent": function() {
@@ -127,9 +217,8 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     // rolls the dice and adds the number to the end of the list
     "RollIntent": function() {
         var roll = rollDice();
-        var turns = this.attributes["elapsedTurns"];
         this.attributes["rollList"].push(roll);
-        this.attributes["elapsedTurns"] = turns + 1;
+        incrementTurn();
         this.emit("RollIntent", roll);
     },
 
@@ -141,8 +230,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
             this.emit(":elicitSlot", "number", "I could not add that to my list, " + repromptSpeech, repromptSpeech);
         } else {
             this.attributes["rollList"].push(roll);
-            var turns = this.attributes["elapsedTurns"];
-            this.attributes["elapsedTurns"] = turns + 1;
+            incrementTurn();
             this.emit(":tell", "I have added the roll " + roll);
         }
     },
@@ -151,8 +239,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     "UndoRollIntent": function() {
         this.attributes["rollList"].pop();
         if(this.attributes["rollList"].length > 0){
-            var turns = this.attributes["elapsedTurns"];
-            this.attributes["elapsedTurns"] = turns - 1;
+            decrementTurn();
         }
         this.emit(":tell", "I have undone the roll");
     },
@@ -169,9 +256,9 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     },
 
     "StatisticsHelpIntent": function() {
-        this.emit(":tell", "Say 'most rolled' and I'll tell you the most rolled number, Say 'turns' and I'll tell you how many " +
-            "player turns it has been since you've started the game, Say 'least rolled' and I'll tell you the least rolled " +
-            "number in the game, finally Say 'top three' to hear the top three rolls" );
+        this.emit(":tell", "Say 'last rolled' and I'll tell you the last rolled number. Say 'most rolled' and I'll tell you the most rolled number."
+            + " Say 'turns' and I'll tell you how many player turns it has been since you've started the game."
+            +" Say 'least rolled' and I'll tell you the least rolled number. Finally say 'top three' to hear the top three rolls" );
     },
 
     // emits the value(s) and the most rolled frequency in the game
@@ -297,16 +384,33 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     },
 
     "AMAZON.HelpIntent": function() {
-        this.emit(":tell", "To play, simply say 'roll' and I'll roll the dice, Say 'add' with a number to manually add a roll, " +
-            "Say 'undo' to undo the last roll, Say 'statistics help' to hear some statistics I can give you about the game");
+        this.emit(":tell", "Say 'roll' and I'll roll the dice. Say 'add' with a number to manually add a roll." +
+            " Say 'undo' to undo the last roll. Say 'statistics help' to hear the statistics I can give you about the game");
+    },
+
+    "AMAZON.CancelIntent": function() {
+        this.response.speak("Cancel");
+        this.emit(':responseReady');
+    },
+
+    "AMAZON.StopIntent": function() {
+        this.response.speak("Stopping");
+        this.emit(':responseReady');
     },
 
     "EndGamePromptIntent": function() {
         this.handler.state = states.ENDGAME;
         this.emitWithState("EndGameConfirmIntent");
+    },
+
+    "Unhandled": function() {
+        const message = "Sorry I didn't get that. Please say it again.";
+        this.response.speak(message).listen(message);
+        this.emit(':responseReady');
     }
 });
 
+// handlers when the game is ending
 var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
     "EndGameConfirmIntent": function() {
         this.emit(":ask", "Are you sure you want to end the game?", "Say yes or no");
@@ -322,45 +426,11 @@ var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
         this.handler.state = states.INGAME;
         this.response.speak("Ok back to the game!");
         this.emit(":responseReady");
-    }
-});
-
-// general handlers not bound to a state
-var generalHandlers = {
-    "LaunchRequest": function() {
-        this.handler.state = states.LAUNCH;
-        this.emit(":tell", "Welcome to Settlers of Catan! Say new game to start a new game");
     },
 
-    "RollIntent": function(roll) {
-        if (roll === undefined) {
-            roll = rollDice();
-        }
-        this.emit(":tell", roll);
-    },
-
-    "AMAZON.HelpIntent": function() {
-        this.emit(":tell", "To play, simply say 'roll' and I'll roll the dice, Say 'add' with a number to manually add a roll, " +
-            "Say 'undo' to undo the last roll, Say 'statistics help' to hear some statistics I can give you about the game");
-    }
-}
-
-// handlers for before game starts and after skill launch
-var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
-    "NewGameIntent": function() {
-        this.handler.state = states.INITIAL;
-        this.emitWithState("StartIntent")
-    },
-
-    "RollIntent": function(roll) {
-        if (roll === undefined) {
-            roll = rollDice();
-        }
-        this.emit(":tell", roll);
-    },
-
-    "AMAZON.StopIntent": function() {
-        this.response.speak("Goodbye!");
+    "Unhandled": function() {
+        const message = "Sorry I didn't get that. Please say it again.";
+        this.response.speak(message).listen(message);
         this.emit(':responseReady');
     }
 });
