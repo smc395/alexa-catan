@@ -143,12 +143,19 @@ var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
     },
 
     "AMAZON.CancelIntent": function() {
-        this.response.speak("Goodbye!");
+        this.response.speak("Cancelling");
         this.emit(':responseReady');
     },
 
     "AMAZON.StopIntent": function() {
-        this.response.speak("Goodbye!");
+        this.response.speak("Stopping");
+        this.emit(':responseReady');
+    },
+
+    "QuitIntent": function() {
+        this.handler.state = "";
+        delete this.attributes.STATE;
+        this.response.speak("Thanks for using Catan Helper, Goodbye!");
         this.emit(':responseReady');
     },
 
@@ -162,7 +169,7 @@ var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
 // handlers before the game starts
 var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
     "StartIntent": function() {
-        this.emit(":ask", "Ready to start a new game?", "Say yes to start or no to quit");
+        this.emit(":ask", "Ready to start a new game?", "Ready to start a new game?");
     },
 
     "AMAZON.HelpIntent": function() {
@@ -182,19 +189,26 @@ var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
 
     "AMAZON.NoIntent": function(){
         this.handler.state = states.LAUNCH;
-        this.response.speak("Okay, see you next time");
+        this.response.speak("Okay, let me know when you are ready.");
         this.emit(":responseReady");
     },
 
     "AMAZON.CancelIntent": function() {
         this.handler.state = states.LAUNCH;
-        this.response.speak("Okay, see you next time!");
+        this.response.speak("Okay, let me know when you are ready.");
         this.emit(':responseReady');
     },
 
     "AMAZON.StopIntent": function() {
         this.handler.state = states.LAUNCH;
-        this.response.speak("Okay, see you next time!");
+        this.response.speak("Okay, let me know when you are ready.");
+        this.emit(':responseReady');
+    },
+
+    "QuitIntent": function() {
+        this.handler.state = "";
+        delete this.attributes.STATE;
+        this.response.speak("Thanks for using Catan Helper, Goodbye!");
         this.emit(':responseReady');
     },
 
@@ -375,7 +389,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         var mostRolledList3 = findMostRolledList(rollFrequencies, mostRolledCount3);
 
         outputSpeech = "The top three rolled numbers are " + mostRolledList1[0] + "  with a frequency of " + mostRolledCount1
-                            + ", " + mostRolledList2[0] + " with a frequency of " + mostRolledCount2 + " and "
+                            + ", " + mostRolledList2[0] + " with a frequency of " + mostRolledCount2 + ", and "
                             + mostRolledList3[0] + " with a frequency of " + mostRolledCount3;
         this.response.speak(outputSpeech);
         this.emit(":responseReady");
@@ -419,7 +433,8 @@ var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
     },
 
     "AMAZON.YesIntent": function() {
-        this.handler.state = states.LAUNCH;
+        this.handler.state = "";
+        delete this.attributes.STATE;
         this.response.speak("Good game! Hope to see you next time!");
         this.emit(":responseReady");
     },
