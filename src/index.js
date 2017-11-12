@@ -108,7 +108,7 @@ function findLeastRolledList(rollFrequencies, leastRolledCount) {
 var generalHandlers = {
     "LaunchRequest": function() {
         this.handler.state = states.LAUNCH;
-        this.emit(":tell", "Welcome to Settlers of Catan! If this is your first time using this skill, please say 'help' to learn how to use it");
+        this.emit(":tell", "Welcome to Settlers of Catan Helper! If this is your first time using this skill, please say 'help' to learn how to use it");
     },
 
     // so in game RollIntent can access this intent
@@ -135,11 +135,11 @@ var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
     },
 
     "AMAZON.HelpIntent": function() {
-        this.emit(":tell", "During the initial part of the game when you place your first two houses and roads, you can ask me to roll the dice for you."
-            + "Then when you are ready to begin the game, say new game. During the game you can use me to roll the dice for you."
-            + "If not, during the game you can say 'add' with a number to manually add a roll or say 'undo' to undo the last roll."
-            + "I also track statistics during the game such as the number of elapsed turns, the last rolled number, most rolled number, least rolled number, and three most rolled numbers."
-            + "Say 'statistics help' at any time during the game to hear the statistics I can give you. When you are ready to end the game let me know.");
+        this.emit(":tell", "<prosody rate='90%'><p><s>During the initial part of the game, when you place your first two houses and roads, you can ask me to roll the dice for you.</s>"
+            + "<s>Then, when you are ready to begin the game, say new game.</s></p> <p><s>During the game, you can use me to roll the dice for you.</s>"
+            + "<s>If not, during the game you can manually add a roll, or undo the last roll.</s></p> <p><s>I also track statistics during the game"
+            + "such as the number of elapsed turns, the last rolled number, most rolled number, least rolled number, and three most rolled numbers.</s>"
+            + "<s>Say 'statistics help' at any time during the game to hear the statistics I can give you.</s></p><s>When you are ready to end the game let me know.</s></prosody>");
     },
 
     "AMAZON.CancelIntent": function() {
@@ -153,7 +153,7 @@ var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
     },
 
     "Unhandled": function() {
-        const message = "Sorry I didn't get that. Please say it again.";
+        const message = "Sorry, I didn't get that. Please say it again.";
         this.response.speak(message).listen(message);
         this.emit(':responseReady');
     }
@@ -166,11 +166,11 @@ var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
     },
 
     "AMAZON.HelpIntent": function() {
-        this.emit(":tell", "During the initial part of the game when you place your first two houses and roads, you can ask me to roll the dice for you."
-            + "Then when you are ready to begin the game, say new game. During the game you can use me to roll the dice for you."
-            + "If not, during the game you can say 'add' with a number to manually add a roll or say 'undo' to undo the last roll."
-            + "I also track statistics during the game such as the number of elapsed turns, the last rolled number, most rolled number, least rolled number, and three most rolled numbers."
-            + "Say 'statistics help' at any time during the game to hear the statistics I can give you. When you are ready to end the game let me know.");
+        this.emit(":tell", "<prosody rate='90%'><p><s>During the initial part of the game, when you place your first two houses and roads, you can ask me to roll the dice for you.</s>"
+            + "<s>Then, when you are ready to begin the game, say new game.</s></p> <p><s>During the game, you can use me to roll the dice for you.</s>"
+            + "<s>If not, during the game you can manually add a roll, or undo the last roll.</s></p> <p><s>I also track statistics during the game"
+            + "such as the number of elapsed turns, the last rolled number, most rolled number, least rolled number, and three most rolled numbers.</s>"
+            + "<s>Say 'statistics help' at any time during the game to hear the statistics I can give you.</s></p><s>When you are ready to end the game let me know.</s></prosody>");
     },
 
     "AMAZON.YesIntent": function() {
@@ -199,7 +199,7 @@ var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
     },
 
     "Unhandled": function() {
-        const message = "Sorry I didn't get that. Please say it again.";
+        const message = "Sorry, I didn't get that. Please say it again.";
         this.response.speak(message).listen(message);
         this.emit(':responseReady');
     }
@@ -259,9 +259,8 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     },
 
     "StatisticsHelpIntent": function() {
-        this.emit(":tell", "Say 'last rolled' and I'll tell you the last rolled number. Say 'most rolled' and I'll tell you the most rolled number."
-            + " Say 'turns' and I'll tell you how many player turns it has been since you've started the game."
-            +" Say 'least rolled' and I'll tell you the least rolled number. Finally say 'top three' to hear the top three rolls" );
+        this.emit(":tell", "<prosody rate='90%'>I can tell you the last rolled number, most rolled number, how many player turns it has been since you've started the game,"
+            +"least rolled number, or the top three rolls</prosody>");
     },
 
     // emits the value(s) and the most rolled frequency in the game
@@ -387,8 +386,8 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     },
 
     "AMAZON.HelpIntent": function() {
-        this.emit(":tell", "Say 'roll' and I'll roll the dice. Say 'add' with a number to manually add a roll." +
-            " Say 'undo' to undo the last roll. Say 'statistics help' to hear the statistics I can give you about the game");
+        this.emit(":tell", "<p>I can roll the dice.</p> <p>If not you, can manually add a roll." +
+            "You can also undo the last roll.</p> Say 'statistics help' to hear the statistics I can give you about the game.");
     },
 
     "AMAZON.CancelIntent": function() {
@@ -407,7 +406,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     },
 
     "Unhandled": function() {
-        const message = "Sorry I didn't get that. Please say it again.";
+        const message = "Sorry, I didn't get that. Please say it again.";
         this.response.speak(message).listen(message);
         this.emit(':responseReady');
     }
@@ -416,7 +415,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
 // handlers when the game is ending
 var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
     "EndGameConfirmIntent": function() {
-        this.emit(":ask", "Are you sure you want to end the game?", "Say yes or no");
+        this.emit(":ask", "Are you sure you want to end the game?", "Say yes or no to wanting to end the game");
     },
 
     "AMAZON.YesIntent": function() {
@@ -427,12 +426,12 @@ var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
 
     "AMAZON.NoIntent": function() {
         this.handler.state = states.INGAME;
-        this.response.speak("Ok back to the game!");
+        this.response.speak("Okay, back to the game!");
         this.emit(":responseReady");
     },
 
     "Unhandled": function() {
-        const message = "Sorry I didn't get that. Please say it again.";
+        const message = "Sorry, I didn't get that. Please say it again.";
         this.response.speak(message).listen(message);
         this.emit(':responseReady');
     }
