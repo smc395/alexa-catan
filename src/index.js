@@ -4,6 +4,7 @@ const Alexa = require("alexa-sdk");
 
 exports.handler = function(event, context, callback){
     const alexa = Alexa.handler(event, context, callback);
+    alexa.dynamoDBTableName = "CatanGames";
     alexa.registerHandlers(generalHandlers, gameHandlers, initialHandlers, inGameHandlers, endGameHandlers);
     alexa.execute();
 };
@@ -108,7 +109,8 @@ function findLeastRolledList(rollFrequencies, leastRolledCount) {
 var generalHandlers = {
     "LaunchRequest": function() {
         this.handler.state = states.LAUNCH;
-        this.emit(":tell", "Welcome to Settlers of Catan Helper! If this is your first time using this skill, please say 'help' to learn how to use it");
+        var outputSpeech = "Welcome to Settlers of Catan Helper! If this is your first time using this skill, please say 'help' to learn how to use it";
+        this.emit(":ask", outputSpeech, outputSpeech);
     },
 
     // so in game RollIntent can access this intent
@@ -117,6 +119,10 @@ var generalHandlers = {
             roll = rollDice();
         }
         this.emit(":tell", roll);
+    },
+
+    "SessionEndedRequest": function() {
+        this.emit(":saveState"); //save attributes to DB
     }
 };
 
@@ -169,7 +175,8 @@ var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
 // handlers before the game starts
 var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
     "StartIntent": function() {
-        this.emit(":ask", "Ready to start a new game?", "Ready to start a new game?");
+        var outputSpeech = "Finished placing your initial pieces and ready to start a new game?";
+        this.emit(":ask", outputSpeech, outputSpeech);
     },
 
     "AMAZON.HelpIntent": function() {
@@ -372,7 +379,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
             }
 
             outputSpeech = "The top three rolled numbers are " + numString1 + "with a frequency of " + mostRolledCount1
-                            + " and "+ numString2 + "with a frequency of " + mostRolledCount2;
+                            + ". Next is "+ numString2 + "with a frequency of " + mostRolledCount2;
 
             this.response.speak(outputSpeech);
             this.emit(":responseReady");
@@ -389,7 +396,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         var mostRolledList3 = findMostRolledList(rollFrequencies, mostRolledCount3);
 
         outputSpeech = "The top three rolled numbers are " + mostRolledList1[0] + "  with a frequency of " + mostRolledCount1
-                            + ", " + mostRolledList2[0] + " with a frequency of " + mostRolledCount2 + ", and "
+                            + ". Next is " + mostRolledList2[0] + " with a frequency of " + mostRolledCount2 + ". Finally, "
                             + mostRolledList3[0] + " with a frequency of " + mostRolledCount3;
         this.response.speak(outputSpeech);
         this.emit(":responseReady");
