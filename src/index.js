@@ -121,6 +121,10 @@ var generalHandlers = {
         this.emit(":tell", roll);
     },
 
+    "GameStatus": function() {
+        this.emit(":tell", "There is no game in progress.");
+    },
+
     "SessionEndedRequest": function() {
         this.emit(":saveState"); //save attributes to DB
     }
@@ -166,7 +170,7 @@ var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
     },
 
     "GameStatus": function() {
-        this.emit(":tell", "You have launched the skill.");
+        this.emit(":tell", "You are currently in the intial part of the game. When ready, you can begin a new game.");
     },
 
     "Unhandled": function() {
@@ -224,8 +228,9 @@ var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
     },
 
     "GameStatus": function() {
-        this.emit(":tell", "You are currently in the intial part of the game.");
+        this.emit(":ask", "You are about to start a new game. Would you like to start now?");
     },
+
 
     "Unhandled": function() {
         const message = "Sorry, I didn't get that. Please say it again.";
@@ -465,7 +470,7 @@ var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
     },
 
     "GameStatus": function() {
-        this.emit(":tell", "You are currently prompted to end the game.");
+        this.emit(":ask", "You are about to end the game. Would you like to end your current game?");
     },
 
     "Unhandled": function() {
