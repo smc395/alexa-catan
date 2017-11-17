@@ -4,7 +4,7 @@ const Alexa = require("alexa-sdk");
 
 exports.handler = function(event, context, callback){
     const alexa = Alexa.handler(event, context, callback);
-    alexa.dynamoDBTableName = "CatanGames";
+    alexa.dynamoDBTableName = "";
     alexa.registerHandlers(generalHandlers, gameHandlers, initialHandlers, inGameHandlers, endGameHandlers);
     alexa.execute();
 };
@@ -165,6 +165,10 @@ var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
         this.emit(':responseReady');
     },
 
+    "GameStatus": function() {
+        this.emit(":tell", "You have launched the skill.");
+    },
+
     "Unhandled": function() {
         const message = "Sorry, I didn't get that. Please say it again.";
         this.response.speak(message).listen(message);
@@ -217,6 +221,10 @@ var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
         delete this.attributes.STATE;
         this.response.speak("Thanks for using Catan Helper, Goodbye!");
         this.emit(':responseReady');
+    },
+
+    "GameStatus": function() {
+        this.emit(":tell", "You are currently in the intial part of the game.");
     },
 
     "Unhandled": function() {
@@ -426,6 +434,10 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         this.emitWithState("EndGameConfirmIntent");
     },
 
+    "GameStatus": function() {
+        this.emit(":tell", "You are currently in a game.");
+    },
+
     "Unhandled": function() {
         const message = "Sorry, I didn't get that. Please say it again.";
         this.response.speak(message).listen(message);
@@ -450,6 +462,10 @@ var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
         this.handler.state = states.INGAME;
         this.response.speak("Okay, back to the game!");
         this.emit(":responseReady");
+    },
+
+    "GameStatus": function() {
+        this.emit(":tell", "You are currently prompted to end the game.");
     },
 
     "Unhandled": function() {
