@@ -170,7 +170,12 @@ var gameHandlers = Alexa.CreateStateHandler(states.LAUNCH, {
     },
 
     "GameStatus": function() {
-        this.emit(":tell", "You are currently in the intial part of the game. When ready, you can begin a new game.");
+        this.emit(":tell", "You are currently in the initial part of the game. When ready, you can begin a new game.");
+    },
+
+    // in case someone uses the invocation word
+    "LaunchRequest": function() {
+        this.emitWithState("GameStatus");
     },
 
     "Unhandled": function() {
@@ -231,6 +236,10 @@ var initialHandlers = Alexa.CreateStateHandler(states.INITIAL, {
         this.emit(":ask", "You are about to start a new game. Would you like to start now?");
     },
 
+    // in case someone uses the invocation word
+    "LaunchRequest": function() {
+        this.emitWithState("GameStatus");
+    },
 
     "Unhandled": function() {
         const message = "Sorry, I didn't get that. Please say it again.";
@@ -440,7 +449,12 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     },
 
     "GameStatus": function() {
-        this.emit(":tell", "You are currently in a game.");
+        this.emit(":ask", "You are currently in a game. What would you like to do?");
+    },
+
+    // in case someone uses the invocation word
+    "LaunchRequest": function() {
+        this.emitWithState("GameStatus");
     },
 
     "Unhandled": function() {
@@ -471,6 +485,11 @@ var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
 
     "GameStatus": function() {
         this.emit(":ask", "You are about to end the game. Would you like to end your current game?");
+    },
+
+    // in case someone uses the invocation word
+    "LaunchRequest": function() {
+        this.emitWithState("GameStatus");
     },
 
     "Unhandled": function() {
