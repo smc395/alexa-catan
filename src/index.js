@@ -125,7 +125,7 @@ var generalHandlers = {
         if (roll === undefined) {
             roll = rollDice();
         }
-        this.emit(":tell", "You rolled a " + roll);
+        this.emit(":tell", roll);
     },
 
     "GameStatus": function() {
