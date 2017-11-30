@@ -295,13 +295,13 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
     "AddRollIntent": function() {
         var roll = parseInt(this.event.request.intent.slots.number.value);
         if (isNaN(roll) || roll < 2 || roll > 12) {
-            var repromptSpeech = "please say two, twelve, or a number between 2 and 12";
-            this.emit(":elicitSlot", "number", "I could not add that to my list, " + repromptSpeech, repromptSpeech);
+            var repromptSpeech = "I could not add that to the roll list. Please try again.";
+            this.emit(":ask", repromptSpeech, repromptSpeech);
         } else {
             this.attributes["rollList"].push(roll);
             var turns = incrementTurn(this.attributes["elapsedTurns"]);
             this.attributes["elapsedTurns"] = turns;
-            this.emit(":tell", "I have added the roll " + roll + "to my list.");
+            this.emit(":tell", "I have added " + roll + " to the roll list.");
         }
     },
 
@@ -514,6 +514,23 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         var cardTitle = "All Roll Frequencies";
 
         this.emit(":tellWithCard", speechOutput, cardTitle, cardText, imageObj);
+    },
+
+    // emits the roll frequency for the user specified number
+    "NumberStatisticIntent": function() {
+        var num = parseInt(this.event.request.intent.slots.statNumber.value);
+        if (isNaN(num) || num < 2 || num > 12) {
+            var repromptSpeech = "Sorry, I couldn't get the statistic for that number. Please try again."
+            this.emit(":ask", repromptSpeech, repromptSpeech);
+        } else {
+            var list = JSON.parse(JSON.stringify(this.attributes["rollList"]));
+            var rollFrequencies = countRollListElements(list);
+            var frequency = rollFrequencies[num];
+            if(frequency === undefined){
+                this.emit(":tell", "The number " + num + " has not been rolled yet.");
+            }
+            this.emit(":tell", "The number " + num + " has a roll frequency of " + frequency);
+        }
     },
 
     "AMAZON.HelpIntent": function() {
