@@ -134,6 +134,12 @@ var generalHandlers = {
 
     "SessionEndedRequest": function() {
         this.emit(":saveState"); //save attributes to DB
+    },
+
+    "Unhandled": function() {
+        const message = "Sorry, I didn't get that. Please say it again.";
+        this.response.speak(message).listen(message);
+        this.emit(':responseReady');
     }
 };
 
