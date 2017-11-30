@@ -483,6 +483,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         var rollFrequencies = countRollListElements(list);
         var outputSpeech = "The statistics for all numbers are as follows: ";
         var noRollsList = [2,3,4,5,6,7,8,9,10,11,12]; // list of numbers that have not been rolled yet
+        var cardFreqText = "";
 
         // create a string listing all the numbers in the roll list and their frequencies
         for(var i = 2; i < 13; i++) {
@@ -490,6 +491,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
             if(f !== undefined){
                 noRollsList.splice(noRollsList.indexOf(i), 1);
                 outputSpeech = outputSpeech + "The number " + i + " has a roll frequency of " + f + ". ";
+                cardFreqText = cardFreqText + i + " has a roll frequency of " + f + ".\n";
             }
         }
 
@@ -509,7 +511,7 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
 
         var speechOutput = "<prosody rate='90%'><p>" + outputSpeech + "</p><p>"+ endString +"</p></prosody>";
 
-        var cardText = outputSpeech + "\n" + endString;
+        var cardText = cardFreqText + "\n" + endString;
 
         var cardTitle = "All Roll Frequencies";
 
