@@ -44,6 +44,7 @@ function decrementTurn(numOfTurns) {
 }
 
 function findMinIndex(array) {
+    array = array.sort(function(a, b){return b - a;}); // sort list in descending order
     var minValue = array[array.length-1];
     var minIndex = array.indexOf(minValue);
     return minIndex;
@@ -52,8 +53,6 @@ function findMinIndex(array) {
 // creates a map of roll values to their frequency
 function countRollListElements(list) {
     var rList = list;
-    rList = rList.sort(function(a, b){return b - a;}); // sort list in descending order
-
     var frequencyTable = {};
     var minIndex;
     var minValueList;
@@ -510,14 +509,14 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         // determine the last sentence string
         var endString = "";
         if(noRollsList.length == 1){
-            endString = "The number " + noRollString + "has not been rolled.";
-        } else {
-            endString = "The numbers " + noRollString + "have not been rolled.";
+            endString = "\nThe number " + noRollString + "has not been rolled.";
+        } else if (noRollsList.length > 1) {
+            endString = "\nThe numbers " + noRollString + "have not been rolled.";
         }
 
         var speechOutput = "<prosody rate='90%'><p>" + outputSpeech + "</p><p>"+ endString +"</p></prosody>";
 
-        var cardText = cardFreqText + "\n" + endString;
+        var cardText = cardFreqText + endString;
 
         var cardTitle = "All Roll Frequencies";
 
