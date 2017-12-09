@@ -20,7 +20,6 @@ var file = {
 	},
 
 	findMinIndex: function (array) {
-		array = array.sort(function(a, b){return b - a;}); // sort list in descending order
 	    var minValue = array[array.length-1];
 	    var minIndex = array.indexOf(minValue);
 	    return minIndex;
@@ -36,7 +35,7 @@ var file = {
 	    var minValueList;
 	    var minVal;
 	    while(rList.length > 0){
-	        minIndex = findMinIndex(rList);
+	        minIndex = this.findMinIndex(rList);
 	        minValueList = rList.slice(minIndex); // array of smallest value in rList
 	        minVal = minValueList[0];
 	        frequencyTable[minVal] = minValueList.length;

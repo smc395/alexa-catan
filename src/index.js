@@ -44,7 +44,6 @@ function decrementTurn(numOfTurns) {
 }
 
 function findMinIndex(array) {
-    array = array.sort(function(a, b){return b - a;}); // sort list in descending order
     var minValue = array[array.length-1];
     var minIndex = array.indexOf(minValue);
     return minIndex;
@@ -53,6 +52,8 @@ function findMinIndex(array) {
 // creates a map of roll values to their frequency
 function countRollListElements(list) {
     var rList = list;
+    rList = rList.sort(function(a, b){return b - a;}); // sort list in descending order
+
     var frequencyTable = {};
     var minIndex;
     var minValueList;
