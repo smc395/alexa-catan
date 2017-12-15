@@ -21,6 +21,10 @@ Another purpose of this skill is to learn more about Amazon Web Services and to 
 * ![Amazon Alexa SDK](https://github.com/alexa/alexa-skills-kit-sdk-for-nodejs)
 * Sublime Text
 * Google Drawings (for graphics)
+#### Testing Tools Used
+* Amazon API Gateway
+* Jest
+* Postman
 
 ## Future Improvement Plans
 * Sound effects
