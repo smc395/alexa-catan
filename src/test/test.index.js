@@ -1,4 +1,11 @@
-var file = {
+const states = {
+    LAUNCH: "_LAUNCHGAME",
+    INITIAL: "_INITIAL",
+    INGAME: "_INGAME",
+    ENDGAME: "_ENDGAME"
+};
+
+var helpers = {
 
 	rollDice: function () {
 	    const min = 1;
@@ -87,4 +94,35 @@ var file = {
 	}
 }
 
-module.exports = file;
+var generalHandlers = {
+    "LaunchRequest": function() {
+        this.handler.state = states.LAUNCH;
+        var outputSpeech = "Welcome to Settlers of Catan Helper! If this is your first time using this skill, please say 'help' to learn how to use it";
+        this.emit(":ask", outputSpeech, outputSpeech);
+    },
+
+    // so in game RollIntent can access this intent
+    "RollIntent": function(roll) {
+        if (roll === undefined) {
+            roll = rollDice();
+        }
+        this.emit(":tell", roll);
+    },
+
+    "GameStatus": function() {
+        this.emit(":tell", "There is no game in progress.");
+    },
+
+    "SessionEndedRequest": function() {
+        this.emit(":saveState"); //save attributes to DB
+    },
+
+    "Unhandled": function() {
+        const message = "Sorry, I didn't get that. Please say it again.";
+        this.response.speak(message).listen(message);
+        this.emit(':responseReady');
+    }
+};
+
+module.exports.helper = helpers;
+module.exports.gen = generalHandlers;

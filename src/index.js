@@ -595,6 +595,17 @@ var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
         this.emit(":responseReady");
     },
 
+    "AMAZON.CancelIntent": function() {
+        this.handler.state = states.INGAME;
+        this.response.speak("Okay, back to the game!");
+        this.emit(":responseReady");
+    },
+
+    "AMAZON.StopIntent": function() {
+        this.response.speak("Stopping");
+        this.emit(':responseReady');
+    },
+
     "GameStatus": function() {
         this.emit(":ask", "You are about to end the game. Would you like to end your current game?");
     },
