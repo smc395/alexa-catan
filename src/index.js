@@ -510,14 +510,14 @@ var inGameHandlers = Alexa.CreateStateHandler(states.INGAME, {
         // determine the last sentence string
         var endString = "";
         if(noRollsList.length == 1){
-            endString = "The number " + noRollString + "has not been rolled.";
-        } else {
-            endString = "The numbers " + noRollString + "have not been rolled.";
+            endString = "\nThe number " + noRollString + "has not been rolled.";
+        } else if (noRollsList.length > 1) {
+            endString = "\nThe numbers " + noRollString + "have not been rolled.";
         }
 
         var speechOutput = "<prosody rate='90%'><p>" + outputSpeech + "</p><p>"+ endString +"</p></prosody>";
 
-        var cardText = cardFreqText + "\n" + endString;
+        var cardText = cardFreqText + endString;
 
         var cardTitle = "All Roll Frequencies";
 
@@ -593,6 +593,17 @@ var endGameHandlers = Alexa.CreateStateHandler(states.ENDGAME, {
         this.handler.state = states.INGAME;
         this.response.speak("Okay, back to the game!");
         this.emit(":responseReady");
+    },
+
+    "AMAZON.CancelIntent": function() {
+        this.handler.state = states.INGAME;
+        this.response.speak("Okay, back to the game!");
+        this.emit(":responseReady");
+    },
+
+    "AMAZON.StopIntent": function() {
+        this.response.speak("Stopping");
+        this.emit(':responseReady');
     },
 
     "GameStatus": function() {
